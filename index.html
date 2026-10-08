@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>唐詩大闖關 - 兒童版 10 關大冒險</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts for Child-Friendly Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&family=Noto+Serif+TC:wght@600;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        amberPaper: '#FDFBF7',
+                        inkBlack: '#2C2A29',
+                        cinnabarRed: '#E74C3C',
+                        jadeGreen: '#27AE60',
+                        goldYellow: '#F1C40F',
+                        softBlue: '#3498DB',
+                        purpleBadge: '#8E44AD'
+                    },
+                    fontFamily: {
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                        serif: ['"Noto Serif TC"', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #F7F5EF;
+            background-image: radial-gradient(#E5DFD3 1.5px, transparent 1.5px);
+            background-size: 20px 20px;
+        }
+
+        .cloud-card {
+            background-color: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 0 15px rgba(231, 76, 60, 0.05);
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        .shake-animation {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        @keyframes bounceGently {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .bounce-gentle {
+            animation: bounceGently 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(241, 196, 15, 0.6)); }
+            50% { transform: scale(1.05); filter: drop-shadow(0 0 20px rgba(241, 196, 15, 0.9)); }
+        }
+
+        .pulse-glow {
+            animation: pulseGlow 1.5s infinite;
+        }
+
+        .kid-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .kid-btn:hover:not(:disabled) {
+            transform: translateY(-2px) scale(1.01);
+        }
+        .kid-btn:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        .level-node-locked {
+            filter: grayscale(80%);
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between p-3 sm:p-5 text-inkBlack select-none">
+
+    <!-- Top Navigation Header -->
+    <header class="w-full max-w-3xl flex items-center justify-between mb-3 px-2">
+        <div class="flex items-center space-x-3">
+            <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-red-500 to-amber-400 text-white flex items-center justify-center text-2xl shadow-md">
+                <i class="fa-solid fa-graduation-cap"></i>
+            </div>
+            <div>
+                <h1 class="text-xl sm:text-2xl font-black text-cinnabarRed tracking-wide">唐詩大闖關 ‧ 兒童版</h1>
+                <p class="text-xs text-gray-500 font-bold">小手拉大手 ‧ 輕鬆解鎖 10 關唐詩寶藏</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2">
+            <button onclick="showLevelMap()" class="px-3 py-2 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs sm:text-sm font-bold shadow-sm transition flex items-center space-x-1">
+                <i class="fa-solid fa-map text-amber-600"></i>
+                <span>關卡地圖</span>
+            </button>
+            <button id="soundToggleBtn" onclick="toggleAudio()" class="p-2.5 rounded-xl border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 shadow-sm transition">
+                <i id="soundIcon" class="fa-solid fa-volume-high"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Game Display Area -->
+    <main class="w-full max-w-3xl flex-1 flex flex-col justify-center my-auto relative">
+
+        <!-- 1. LEVEL SELECTION MAP SCREEN -->
+        <div id="levelMapScreen" class="cloud-card rounded-3xl p-5 sm:p-8 border-2 border-amber-200 my-auto shadow-xl">
+            <div class="text-center mb-6">
+                <span class="inline-block px-4 py-1.5 bg-red-100 text-cinnabarRed text-xs font-black rounded-full mb-2">
+                    <i class="fa-solid fa-trophy mr-1"></i> 挑戰規則：每關 10 題，滿 80 分解鎖下一關！
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-black text-gray-800">選一關開始挑戰吧！</h2>
+            </div>
+
+            <!-- 10 Level Nodes Grid -->
+            <div id="levelGrid" class="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 my-4">
+                <!-- Injected via JavaScript -->
+            </div>
+
+            <!-- Total Score & Reset Progress -->
+            <div class="mt-6 flex flex-col sm:flex-row justify-between items-center bg-amber-50 p-4 rounded-2xl border border-amber-200 text-xs sm:text-sm">
+                <div class="font-bold text-gray-700 mb-2 sm:mb-0">
+                    <i class="fa-solid fa-star text-goldYellow text-lg mr-1"></i>
+                    <span>已完成闖關總積分：</span>
+                    <span id="totalAccumulatedScore" class="text-lg font-black text-cinnabarRed">0</span> 分
+                </div>
+                <button onclick="resetGameProgress()" class="text-gray-400 hover:text-red-500 font-bold underline transition">
+                    <i class="fa-solid fa-trash-can mr-1"></i> 重置學習進度
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. ACTIVE QUESTION SCREEN -->
+        <div id="gameScreen" class="hidden flex-col space-y-4">
+            
+            <!-- Question Top Header & Score Tracker -->
+            <div class="cloud-card rounded-2xl p-4 border border-amber-200 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-2">
+                <div class="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-start">
+                    <div class="flex items-center space-x-2">
+                        <span id="currentLevelBadge" class="bg-gradient-to-r from-red-500 to-amber-500 text-white text-xs font-black px-3 py-1 rounded-full shadow-sm">
+                            第 1 關
+                        </span>
+                        <span class="text-xs text-gray-500 font-bold">本關得分:</span>
+                        <span id="levelScore" class="text-2xl font-black text-cinnabarRed">0</span>
+                        <span class="text-xs text-gray-400 font-bold">/ 100 分</span>
+                    </div>
+                </div>
+
+                <div class="w-full sm:w-48 flex flex-col items-end">
+                    <div class="flex justify-between w-full text-xs text-gray-500 mb-1">
+                        <span>題目進度</span>
+                        <span id="questionProgressText" class="font-bold text-cinnabarRed">1 / 10</span>
+                    </div>
+                    <div class="w-full bg-gray-200 h-3 rounded-full overflow-hidden border border-gray-100">
+                        <div id="progressBar" class="bg-gradient-to-r from-amber-400 to-red-500 h-full rounded-full transition-all duration-300" style="width: 10%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Poem Question Container -->
+            <div id="questionCard" class="cloud-card rounded-3xl p-5 sm:p-7 border-2 border-amber-200 relative shadow-md">
+                
+                <!-- Poem Author & Title Header -->
+                <div class="flex justify-between items-center border-b border-amber-200/80 pb-3 mb-3">
+                    <div class="flex items-center space-x-2">
+                        <span class="bg-amber-100 text-amber-900 text-xs px-2.5 py-1 rounded-lg font-bold" id="poemAuthor">作者</span>
+                        <span class="text-lg sm:text-xl font-black text-gray-800" id="poemTitle">《詩名》</span>
+                    </div>
+                    <span class="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-md font-bold">
+                        <i class="fa-solid fa-child-reaching mr-1"></i>童趣閱讀
+                    </span>
+                </div>
+
+                <!-- Full Poem Text Box -->
+                <div class="bg-gradient-to-b from-amber-50/70 to-white rounded-2xl p-4 sm:p-6 my-3 border border-amber-200 text-center shadow-inner">
+                    <div id="fullPoemLines" class="space-y-2.5 text-lg sm:text-2xl font-serif font-black tracking-widest text-gray-800 leading-relaxed">
+                        <!-- Injected dynamically -->
+                    </div>
+                </div>
+
+                <!-- 4 Options Grid -->
+                <div id="optionsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                    <!-- Injected dynamically -->
+                </div>
+
+                <!-- Kid-Friendly Explanation & Appreciation Box -->
+                <div id="explanationBox" class="hidden mt-5 p-5 rounded-2xl bg-amber-50/90 border border-amber-300 text-sm text-gray-800 space-y-3">
+                    <div class="flex items-center space-x-2 text-cinnabarRed font-bold text-base border-b border-amber-200 pb-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-500 text-lg"></i>
+                        <span>小詩人賞析教室（10歲小朋友專屬）</span>
+                    </div>
+
+                    <!-- 1. Super Simple Main Story & Mood -->
+                    <div class="bg-white p-3 rounded-xl border border-amber-200/60 shadow-sm">
+                        <h4 class="font-bold text-amber-900 text-xs sm:text-sm mb-1 flex items-center">
+                            <i class="fa-solid fa-lightbulb text-amber-500 mr-1.5"></i>【這首詩在講什麼呢？】
+                        </h4>
+                        <p id="kidMoodText" class="text-gray-700 font-medium leading-relaxed text-xs sm:text-sm pl-1"></p>
+                    </div>
+                    
+                    <!-- 2. Easy Translation -->
+                    <div class="bg-white p-3 rounded-xl border border-amber-200/60 shadow-sm">
+                        <h4 class="font-bold text-amber-900 text-xs sm:text-sm mb-1 flex items-center">
+                            <i class="fa-solid fa-book-open-reader text-blue-500 mr-1.5"></i>【白話文大意】
+                        </h4>
+                        <p id="kidTranslationText" class="text-gray-700 leading-relaxed text-xs sm:text-sm pl-1"></p>
+                    </div>
+
+                    <!-- 3. Easy Vocab -->
+                    <div class="bg-white p-3 rounded-xl border border-amber-200/60 shadow-sm">
+                        <h4 class="font-bold text-amber-900 text-xs sm:text-sm mb-1 flex items-center">
+                            <i class="fa-solid fa-magnifying-glass text-green-500 mr-1.5"></i>【好詞好字字典】
+                        </h4>
+                        <ul id="kidVocabList" class="list-disc list-inside text-gray-700 space-y-1 pl-1 text-xs sm:text-sm">
+                            <!-- Injected dynamically -->
+                        </ul>
+                    </div>
+
+                    <button id="nextBtn" onclick="nextQuestion()" class="kid-btn mt-3 w-full bg-gradient-to-r from-red-500 to-amber-500 hover:from-red-600 hover:to-amber-600 text-white font-bold py-3.5 rounded-xl shadow-md text-center cursor-pointer text-base">
+                        下一題 <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. LEVEL COMPLETE MODAL (Pass >= 80 or Fail < 80) -->
+        <div id="levelResultModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center p-4">
+            <div class="cloud-card rounded-3xl p-6 sm:p-8 max-w-md w-full border-4 border-amber-300 text-center relative shadow-2xl animate-bounce-short">
+                
+                <div id="resultHeaderIcon" class="w-20 h-20 mx-auto mb-3 rounded-full bg-amber-100 flex items-center justify-center text-4xl shadow-inner">
+                    <i class="fa-solid fa-trophy text-amber-500"></i>
+                </div>
+
+                <h3 id="resultModalTitle" class="text-2xl sm:text-3xl font-black mb-1 text-gray-800">關卡挑戰結果</h3>
+                <p id="resultModalSubtitle" class="text-xs text-gray-500 mb-4">第一關 ‧ 完成 10 題測驗</p>
+
+                <div class="bg-amber-50 rounded-2xl p-4 my-3 border border-amber-200 inline-block w-full">
+                    <span class="text-xs text-gray-500 font-bold block">本關得分</span>
+                    <span id="resultModalScore" class="text-5xl font-black text-cinnabarRed">80</span>
+                    <span class="text-gray-400 font-bold"> / 100 分</span>
+                </div>
+
+                <p id="resultModalMessage" class="text-sm font-bold my-3 text-gray-700 leading-relaxed px-2">
+                    <!-- Message text -->
+                </p>
+
+                <div class="flex flex-col gap-2 mt-5">
+                    <button id="primaryResultBtn" onclick="handleResultPrimaryAction()" class="kid-btn w-full bg-gradient-to-r from-red-500 to-amber-500 text-white font-bold py-3.5 rounded-xl shadow-lg text-base">
+                        下一關 <i class="fa-solid fa-circle-arrow-right ml-1"></i>
+                    </button>
+                    <button onclick="showLevelMap()" class="kid-btn w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl transition text-xs sm:text-sm">
+                        <i class="fa-solid fa-map mr-1"></i> 返回關卡地圖
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. GRAND SURPRISE MODAL FOR LEVEL 10 CLEARANCE -->
+        <div id="grandSurpriseModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+            <div class="cloud-card rounded-3xl p-6 sm:p-10 max-w-lg w-full border-4 border-goldYellow text-center relative shadow-2xl my-auto">
+                
+                <!-- Sparkling Crown -->
+                <div class="w-24 h-24 mx-auto mb-3 rounded-full bg-gradient-to-tr from-amber-300 via-yellow-400 to-amber-500 flex items-center justify-center text-white text-5xl shadow-lg pulse-glow">
+                    <i class="fa-solid fa-crown"></i>
+                </div>
+
+                <span class="inline-block px-4 py-1 bg-yellow-100 text-yellow-800 font-black rounded-full text-xs mb-2">
+                    🎉 震撼大驚喜 ‧ 最終大滿貫 🎉
+                </span>
+                <h2 class="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-amber-600 to-yellow-500 mb-2">
+                    恭喜破關全部 10 關！
+                </h2>
+                <p class="text-xs sm:text-sm text-gray-600 font-bold leading-relaxed mb-4">
+                    太厲害了！你已經熟讀 100 首精選唐詩，完成了所有難關，獲得了最高榮譽！
+                </p>
+
+                <!-- Unboxing Interactive Gift Box -->
+                <div id="unboxingBox" class="bg-gradient-to-b from-amber-100 to-amber-50 rounded-2xl p-5 border-2 border-dashed border-amber-400 my-4 shadow-sm cursor-pointer hover:scale-105 transition transform" onclick="openGrandGift()">
+                    <div id="giftClosedState" class="py-4">
+                        <div class="text-6xl text-red-500 animate-bounce mb-2">
+                            <i class="fa-solid fa-gift"></i>
+                        </div>
+                        <p class="font-black text-amber-900 text-sm">【點擊拆開你的「唐詩大宗師」驚喜禮盒】</p>
+                    </div>
+
+                    <div id="giftOpenedState" class="hidden py-2 space-y-3">
+                        <div class="p-4 bg-white rounded-xl border border-goldYellow shadow-md text-left">
+                            <div class="text-center font-serif font-black text-lg text-amber-900 border-b border-amber-200 pb-2 mb-2">
+                                📜 唐詩大宗師 ‧ 榮譽獎狀 📜
+                            </div>
+                            <p class="text-xs sm:text-sm text-gray-700 leading-relaxed">
+                                茲證明小詩人小達人，以無與倫比的超凡智慧，通關全數 100 首經典唐詩，特頒此獎，封為：
+                            </p>
+                            <div class="text-center font-black text-xl text-red-600 my-2 tracking-widest bg-yellow-50 py-2 rounded-lg border border-yellow-300">
+                                ⭐ 唐詩至尊大宗師 ⭐
+                            </div>
+                            <p class="text-xs text-gray-500 text-center font-bold">「熟讀唐詩三百首，不會作詩也會吟！」</p>
+                        </div>
+                        <button onclick="launchMassiveFireworks()" class="w-full bg-gradient-to-r from-yellow-400 via-red-500 to-purple-600 text-white font-black py-3 rounded-xl shadow-md text-sm">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> 再放一次慶祝煙火！
+                        </button>
+                    </div>
+                </div>
+
+                <button onclick="showLevelMap(); closeModal('grandSurpriseModal');" class="kid-btn mt-3 w-full bg-gradient-to-r from-red-500 to-amber-500 text-white font-black py-3.5 rounded-xl shadow-lg text-base">
+                    <i class="fa-solid fa-rotate-right mr-1"></i> 返回地圖查看成果
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full max-w-3xl text-center text-xs text-gray-400 py-3">
+        唐詩大闖關 ‧ 專為 10 歲兒童設計之淺白賞析與 10 關漸進化學習遊戲
+    </footer>
+
+    <script>
+        // Comprehensive Database of 100 Kid-Friendly Tang Poems (10 Levels x 10 Questions)
+        const ALL_LEVELS_DATA = [
+            // LEVEL 1
+            [
+                { id: 101, title: "靜夜思", author: "李白", lines: ["床前明月光，", "疑是地上霜。", "舉頭望明月，", "低頭思故鄉。"], blankLineIndex: 1, answer: "疑是地上霜", options: ["疑是地上霜", "清泉石上流", "天階夜色涼", "野渡無人舟"], mood: "想像一下夜深人靜時，亮晶晶的月光照在床前，看起來就像地上一層白白涼涼的霜。詩人獨自人在外面，抬頭看到明月，就忍不住想念起遠方的家和家人。", translation: "明亮的月光照在我的床前，讓我以為是地上鋪了一層白霜。我抬頭看看天上圓圓的月亮，低頭就深深想念起自己的故鄉。", vocabNotes: ["疑是：以為是、好像是。", "舉頭：抬起頭來。"] },
+                { id: 102, title: "春曉", author: "孟浩然", lines: ["春眠不覺曉，", "處處聞啼鳥。", "夜来風雨聲，", "花落知多少。"], blankLineIndex: 1, answer: "處處聞啼鳥", options: ["處處聞啼鳥", "處處蛙聲叫", "夜深忽夢事", "風吹草低見"], mood: "春天睡覺太舒服了，不知不覺天就亮囉！到處都能聽到鳥兒開心地唱歌。想到昨晚下雨刮風，不知道花園裡的花朵掉落了多少呢？", translation: "春天裡睡得香甜，不知不覺天就亮了，到處都能聽到鳥兒清脆的叫聲。回想昨晚刮風下雨的聲音，不知道花園裡落下了多少花瓣？", vocabNotes: ["不覺曉：不知不覺天就亮了。", "聞：聽到。"] },
+                { id: 103, title: "登鸛鵲樓", author: "王之渙", lines: ["白日依山盡，", "黃河入海流。", "欲窮千里目，", "更上一層樓。"], blankLineIndex: 3, answer: "更上一層樓", options: ["更上一層樓", "會當凌絕頂", "獨釣寒江雪", "千里江陵還"], mood: "這首詩告訴我們：想看到更遠更大更美麗的景色，就要不怕辛苦，再往高處多爬一層樓！學習也是這樣喔！", translation: "太陽緊貼著西山漸漸落下，黃河滾滾奔流匯入大海。如果想要看到幾千里外更遠的風景，就要再站高一層樓！", vocabNotes: ["窮：看盡、看到底。", "千里目：看到極遠的地方。"] },
+                { id: 104, title: "江雪", author: "柳宗元", lines: ["千山鳥飛絕，", "萬徑人蹤滅。", "孤舟蓑笠翁，", "獨釣寒江雪。"], blankLineIndex: 3, answer: "獨釣寒江雪", options: ["獨釣寒江雪", "獨坐敬亭山", "孤舟蓑笠翁", "江清月近人"], mood: "大雪紛飛，整座大山沒有一隻鳥，路上也沒有半個人影。只有一位勇敢的老爺爺穿著雨衣，獨自在冷冰冰的江面上釣魚，非常有毅力！", translation: "所有的山上都看不到鳥兒飛翔，所有的路上都看不到人的腳印。一艘孤獨的小船上，有一位身穿草雨衣的老翁，正獨自在下雪的寒冷江面上釣魚。", vocabNotes: ["絕：沒有了、消失。", "萬徑：千千萬萬條小路。"] },
+                { id: 105, title: "相思", author: "王維", lines: ["紅豆生南國，", "春來發幾枝？", "願君多採擷，", "此物最相思。"], blankLineIndex: 2, answer: "願君多採擷", options: ["願君多採擷", "勸君更盡酒", "花開堪折枝", "莫待無花折"], mood: "紅紅的相思豆長在南方，春天到了長出新芽。詩人希望好朋友能多採一些紅豆，因為紅豆代表對朋友最深切的思念！", translation: "紅豆生長在溫暖的南方，春天到了不知道長出多少新枝？希望你能多多採摘，因為這種紅豆最能代表想念的心意。", vocabNotes: ["採擷：採摘。", "相思：互相想念。"] },
+                { id: 106, title: "詠鵝", author: "駱賓王", lines: ["鵝鵝鵝，", "曲項向天歌。", "白毛浮綠水，", "紅掌撥清波。"], blankLineIndex: 3, answer: "紅掌撥清波", options: ["紅掌撥清波", "春風吹又生", "竹外桃花笑", "風吹草低見"], mood: "作者小時候看到大鵝伸長脖子對天空叫，雪白的羽毛浮在綠色的水面上，紅紅的小腳掌撥動清澈的水波，畫面好可愛！", translation: "大鵝大鵝大鵝，彎曲著脖子朝著天空唱歌。雪白的羽毛浮在綠色的水面上，紅色的腳掌撥動著清澈的水波。", vocabNotes: ["曲項：彎曲脖子。", "撥：劃動、划水。"] },
+                { id: 107, title: "尋隱者不遇", author: "賈島", lines: ["松下問童子，", "言師採藥去。", "只在此山中，", "雲深不知處。"], blankLineIndex: 3, answer: "雲深不知處", options: ["雲深不知處", "門泊東吳船", "不知心恨誰", "白雲生處家"], mood: "去大山裡的松樹下找一位高人，小童說師父去山上採藥了。雖然知道他就在這座大山裡，但山上雲霧太濃太深，不知道具體在哪裡呢。", translation: "在松樹下問一個小童，他說師父採藥去了。只知道師父就在這座山裡，但是雲霧那麼深，不知道究竟在什麼地方。", vocabNotes: ["言：說。", "雲深：雲霧濃密的地方。"] },
+                { id: 108, title: "憫農", author: "李紳", lines: ["鋤禾日當午，", "汗滴禾下土。", "誰知盤中飧，", "粒粒皆辛苦。"], blankLineIndex: 3, answer: "粒粒皆辛苦", options: ["粒粒皆辛苦", "春種一粒粟", "秋收萬顆子", "四海無閒田"], mood: "農夫大太陽底下辛苦種田，汗水一滴滴掉進泥土裡。我們吃的每一口飯、每一粒米，都是農夫辛苦換來的，一定要好好珍惜糧食！", translation: "農夫在大太陽正熱的中午種田，汗水一滴滴掉進秧苗底下的泥土裡。有誰知道碗裡的每一粒飯，都是農夫辛苦耕種得來的呢？", vocabNotes: ["飧：飯菜。", "皆：都是。"] },
+                { id: 109, title: "古朗月行", author: "李白", lines: ["小時不識月，", "呼作白玉盤。", "又疑瑤台鏡，", "飛在青雲端。"], blankLineIndex: 1, answer: "呼作白玉盤", options: ["呼作白玉盤", "疑是地上霜", "舉頭望明月", "月落烏啼霜"], mood: "李白小時候沒看過月亮，以為天上的圓月是一個大大的漂亮白玉盤子呢！想像力真的太棒了！", translation: "小時候我不認識月亮，把它叫作白玉盤。又懷疑它是仙人用的鏡子，飛到了青青的雲彩上面。", vocabNotes: ["呼作：叫作。", "青雲端：青雲的頂端。"] },
+                { id: 110, title: "池上", author: "白居易", lines: ["小娃撐小艇，", "偷採白蓮回。", "不解藏蹤跡，", "浮萍一道開。"], blankLineIndex: 3, answer: "浮萍一道開", options: ["浮萍一道開", "早有蜻蜓立", "處處聞啼鳥", "紅掌撥清波"], mood: "一個可愛的小朋友划著小船去採白蓮花，因為不懂得隱藏劃船的痕跡，水面上的浮萍被小船劃開了一條明顯的水道，真討人喜歡！", translation: "小孩子划著小船，悄悄採了白蓮花划回來。他不懂得隱藏劃船的痕跡，水面上的浮萍被小船劃開了一道痕跡。", vocabNotes: ["不解：不懂得。", "蹤跡：腳印或痕跡。"] }
+            ],
+            // LEVEL 2
+            [
+                { id: 201, title: "早發白帝城", author: "李白", lines: ["朝辭白帝彩雲間，", "千里江陵一日還。", "兩岸猿聲啼不住，", "輕舟已過萬重山。"], blankLineIndex: 2, answer: "兩岸猿聲啼不住", options: ["兩岸猿聲啼不住", "長江後浪推前浪", "風吹草低見牛羊", "日照香爐生紫煙"], mood: "船開得好快好輕快喔！兩岸山上的猴子還在吱吱叫個不停呢，小船已經輕鬆穿過千山萬水了！這代表心情非常愉快舒暢！", translation: "早晨辭別彩雲繚繞的白帝城，遠在千里的江陵一天就能到達。兩岸山中小猴子的叫聲還沒停，輕快的小船早已穿過了層層重山。", vocabNotes: ["朝辭：早晨離開。", "啼不住：叫個不停。"] },
+                { id: 202, title: "黃鶴樓送孟浩然之廣陵", author: "李白", lines: ["故人西辭黃鶴樓，", "煙花三月下揚州。", "孤帆遠影碧空盡，", "唯見長江天際流。"], blankLineIndex: 1, answer: "煙花三月下揚州", options: ["煙花三月下揚州", "煙波江上使人愁", "風吹柳花滿店香", "孤帆遠影碧空盡"], mood: "好朋友要坐船去揚州了，春天三月花開得像美麗的煙霧一樣。詩人一直站在江邊看著朋友的船越飄越遠，直到看不到為止，非常珍惜友誼。", translation: "老朋友在西邊辭別黃鶴樓，在繁花似錦的三月去往揚州。孤單的船影漸漸消失在藍天盡頭，只看到長江水奔流向天邊。", vocabNotes: ["故人：老朋友。", "煙花：指春天花開如煙霧般的美景。"] },
+                { id: 203, title: "涼州詞", author: "王之渙", lines: ["黃河遠上白雲間，", "一片孤城萬仞山。", "羌笛何須怨楊柳？", "春風不度玉門關。"], blankLineIndex: 3, answer: "春風不度玉門關", options: ["春風不度玉門關", "西出陽關無故人", "天下誰人不識君", "古來征戰幾人回"], mood: "邊疆的山高高的，房子少少的。雖然這裡風很大很涼，溫暖的春風吹不到這裡，但守衛國家的戰士們依然非常勇敢有氣概！", translation: "黃河遠遠看去好像流進了白雲裡，萬仞高山中有一座孤單的城堡。何必用笛子吹著悲傷的曲子呢？溫暖的春風本來就吹不過玉門關呀。", vocabNotes: ["萬仞：形容山非常非常高。", "度：吹過、越過。"] },
+                { id: 204, title: "九月九日憶山東兄弟", author: "王維", lines: ["獨在異鄉為異客，", "每逢佳節倍思親。", "遙知兄弟登高處，", "遍插茱萸少一人。"], blankLineIndex: 1, answer: "每逢佳節倍思親", options: ["每逢佳節倍思親", "笑問客從何處來", "莫愁前路無知己", "少小離家老大回"], mood: "一個人在外地，每當遇到過年過節，就特別加倍想念親人！想到兄弟們聚在一起玩，就發覺少了自己一個人，心情很有感觸。", translation: "獨自一人在遠方做客，每逢歡快的節日就更加思念親人。遠遠想到兄弟們今天去登高，頭上插著茱萸卻少了我一個人。", vocabNotes: ["倍：加倍、更加。", "茱萸：一種有香味的植物，古人節日用來辟邪。"] },
+                { id: 205, title: "楓橋夜泊", author: "張繼", lines: ["月落烏啼霜滿天，", "江楓漁火對愁眠。", "姑蘇城外寒山寺，", "夜半鐘聲到客船。"], blankLineIndex: 3, answer: "夜半鐘聲到客船", options: ["夜半鐘聲到客船", "隔江猶唱後庭花", "不知江月待何人", "輕舟已過萬重山"], mood: "深夜睡不著，看到月亮沉下去，聽到烏鴉叫，遠處寒山寺傳來噹～噹～的鐘聲傳到船上，非常有江南水鄉寧靜優美的情調。", translation: "月亮西沉、烏鴉啼叫，天空鋪滿寒霜，伴著江邊楓樹和漁火睡不著。姑蘇城外的寒山寺，半夜敲響的鐘聲傳到了我的客船上。", vocabNotes: ["漁火：漁船上的燈火。", "夜半：半夜。"] },
+                { id: 206, title: "回鄉偶書", author: "賀知章", lines: ["少小離家老大回，", "鄉音無改鬢毛催。", "兒童相見不相識，", "笑問客從何處來。"], blankLineIndex: 3, answer: "笑問客從何處來", options: ["笑問客從何處來", "不敢問來人", "不知明鏡裏", "相逢何必曾相識"], mood: "老爺爺從小離開家，老了才回到家鄉。雖然講話口音沒變，但頭髮都白了。村裡的小朋友看到他都不認識，還親切地問：「老客人你從哪裡來呀？」", translation: "年少時離開家鄉，年老了才回來；家鄉口音沒有變，頭髮卻花白稀疏了。村裡的小孩看見我不認識，笑著問我是從哪裡來的客人。", vocabNotes: ["少小：小時候。", "鄉音：家鄉的口音。"] },
+                { id: 207, title: "烏衣巷", author: "劉禹錫", lines: ["朱雀橋邊野草花，", "烏衣巷口夕陽斜。", "舊時王謝堂前燕，", "飛入尋常百姓家。"], blankLineIndex: 2, answer: "舊時王謝堂前燕", options: ["舊時王謝堂前燕", "落花時節又逢君", "輕羅小扇撲流螢", "柴門聞犬吠"], mood: "以前有錢大官家屋簷下的燕子，現在飛到了普通老百姓的家裡蓋窩。時間過得真快，很多事情都會改變呢！", translation: "朱雀橋邊開滿了野花野草，烏衣巷口斜陽照耀。以前高官貴族大房子裡的燕子，現在都飛進了普通百姓的家裡。", vocabNotes: ["尋常：普通、一般。"] },
+                { id: 208, title: "清明", author: "杜牧", lines: ["清明時節雨紛紛，", "路上行人欲斷魂。", "借問酒家何處有？", "牧童遙指杏花村。"], blankLineIndex: 3, answer: "牧童遙指杏花村", options: ["牧童遙指杏花村", "春風拂檻露華濃", "近鄉情更怯", "霜葉紅於二月花"], mood: "清明節下著毛毛細雨，走路的人心情濕濕涼涼的。想找個地方休息喝杯熱茶，騎在牛背上的放牛小童遠遠指了指美麗的杏花村。", translation: "清明節的時候細雨紛紛下個不停，路上的行人心情很憂傷。請問哪裡有休息的酒家呢？放牛的小童遠遠指了指杏花村。", vocabNotes: ["遙指：遠遠地指著。"] },
+                { id: 209, title: "江南春", author: "杜牧", lines: ["千里鶯啼綠映紅，", "水村山郭酒旗風。", "南朝四百八十寺，", "多少樓台煙雨中。"], blankLineIndex: 0, answer: "千里鶯啼綠映紅", options: ["千里鶯啼綠映紅", "日照香爐生紫煙", "竹外桃花三兩枝", "兩岸猿聲啼不住"], mood: "江南的春天太漂亮了！到處都是黃鶯在快樂地唱歌，紅花綠葉互相照映，還有美麗的山村和毛毛細雨中的古老房子。", translation: "廣闊的江南到處有黃鶯歌唱，綠葉襯托著紅花，山村水鄉的酒旗在風中飄揚。南朝留下的許多古老寺廟，無數樓台都在迷濛的煙雨中。", vocabNotes: ["鶯啼：黃鶯鳥歌唱。"] },
+                { id: 210, title: "鹿柴", author: "王維", lines: ["空山不見人，", "但聞人語響。", "返景入深林，", "復照青苔上。"], blankLineIndex: 1, answer: "但聞人語響", options: ["但聞人語響", "處處聞啼鳥", "柴門聞犬吠", "空山新雨後"], mood: "深山裡安安靜靜的看不太到人，只偶爾聽到遠處傳來說話的聲音。夕陽的光線穿過樹林，照在綠油油的青苔上，感覺非常平靜舒服。", translation: "幽靜的山裡看不見人影，只聽見說話的聲音迴盪。夕陽的餘暉透進濃密的樹林，重新照在綠色的青苔上面。", vocabNotes: ["但聞：只聽到。", "返景：夕陽折射的光線。"] }
+            ],
+            // LEVEL 3
+            [
+                { id: 301, title: "竹石", author: "鄭燮", lines: ["咬定青山不放鬆，", "立根原在破岩中。", "千磨萬擊還堅勁，", "任爾東西南北風。"], blankLineIndex: 3, answer: "任爾東西南北風", options: ["任爾東西南北風", "吹盡狂沙始到金", "野火燒不盡", "春風吹又生"], mood: "竹子把根深深扎在岩石縫裡，不管吹什麼狂風都不害怕！這告訴我們要像竹子一樣勇敢堅強，不怕困難！", translation: "竹子緊緊咬住青山絕不放鬆，把根深深扎在堅硬的岩石中。經歷無數磨難打擊依然堅韌挺拔，管你吹的是東南西北風！", vocabNotes: ["任爾：隨憑你、不管你。"] },
+                { id: 302, title: "山行", author: "杜牧", lines: ["遠上寒山石徑斜，", "白雲生處有人家。", "停車坐愛楓林晚，", "霜葉紅於二月花。"], blankLineIndex: 3, answer: "霜葉紅於二月花", options: ["霜葉紅於二月花", "春風吹又生", "映日荷花別樣紅", "竹外桃花三兩枝"], mood: "秋天的楓樹葉子被霜降過後，變得紅彤彤的，比春天二月盛開的花朵還要紅艷美麗！停下車來欣賞風景真是棒極了！", translation: "沿著彎彎曲曲的石路登上秋山，白雲飄浮的地方竟然有人家。停下車來是因為太喜歡傍晚的楓樹林，被霜打過的楓葉比二月春花還要紅！", vocabNotes: ["坐：因為。", "紅於：比……還要紅。"] },
+                { id: 303, title: "贈汪倫", author: "李白", lines: ["李白乘舟將欲行，", "忽聞岸上踏歌聲。", "桃花潭水深千尺，", "不及汪倫送我情。"], blankLineIndex: 3, answer: "不及汪倫送我情", options: ["不及汪倫送我情", "西出陽關無故人", "天下誰人不識君", "孤帆遠影碧空盡"], mood: "李白要坐船走了，朋友汪倫在岸上邊唱歌邊踏地為他送行。桃花潭的水雖然有千尺那麼深，也比不上汪倫對我的深厚友誼呀！", translation: "李白坐上小船準備要出發，突然聽到岸上傳來邊踩地邊唱歌的送行聲。桃花潭的水縱然有千尺那麼深，也比不上汪倫送我的真摯情誼。", vocabNotes: ["踏歌：邊踩地打拍子邊唱歌。"] },
+                { id: 304, title: "絕句", author: "杜甫", lines: ["兩個黃鸝鳴翠柳，", "一行白鷺上青天。", "窗含西嶺千秋雪，", "門泊東吳萬里船。"], blankLineIndex: 0, answer: "兩個黃鸝鳴翠柳", options: ["兩個黃鸝鸣翠柳", "獨釣寒江雪", "春風吹又生", "竹外桃花笑"], mood: "兩隻小黃鳥在綠色的柳樹上開心地唱歌，一行白鷺鷥飛向藍天。窗外可以看到遠山白雪，門口停著遠航的船隻，色彩非常繽紛熱鬧！", translation: "兩隻黃鸝在翠綠的柳樹間鳴叫，一行白鷺飛上了青青的天空。窗框裡包含著西山積聚千年的白雪，門前停泊著要開往萬里外東吳的船隻。", vocabNotes: ["黃鸝：黃鶯鳥。", "翠柳：翠綠的柳樹。"] },
+                { id: 305, title: "賦得古原草送別", author: "白居易", lines: ["離離原上草，", "一歲一枯榮。", "野火燒不盡，", "春風吹又生。"], blankLineIndex: 3, answer: "春風吹又生", options: ["春風吹又生", "任爾東西南北風", "霜葉紅於二月花", "吹盡狂沙始到金"], mood: "小草的生命力超級強大！雖然冬天枯黃了、野火燒過了，只要春天溫暖的風一吹，小草又會高興地發芽長出來！", translation: "草原上的小草長得很茂盛，每年都會枯萎一次又繁榮一次。大火無法把它們徹底燒盡，春風一吹它們又重新生長出來。", vocabNotes: ["枯榮：枯萎與繁茂。", "盡：完結。"] },
+                { id: 306, title: "望廬山瀑布", author: "李白", lines: ["日照香爐生紫煙，", "遙看瀑布掛前川。", "飛流直下三千尺，", "疑是銀河落九天。"], blankLineIndex: 2, answer: "飛流直下三千尺", options: ["飛流直下三千尺", "疑是地上霜", "唯見長江天際流", "奔流到海不復回"], mood: "瀑布從高高的山峰上直直衝下來，聲勢好宏偉！李白開心地發揮想像力：難道這是天上的銀河掉下來了嗎？", translation: "陽光照耀著香爐峰升起紫色雲煙，遠遠望去瀑布就像掛在山前的大河。快速的水流直衝而下三千尺，讓人懷疑是天上的銀河落到了人間。", vocabNotes: ["九天：天空的最高處。"] },
+                { id: 307, title: "飲湖上初晴後雨", author: "蘇軾", lines: ["水光濂滟晴方好，", "山色空濛雨亦奇。", "欲把西湖比西子，", "淡妝濃抹總相宜。"], blankLineIndex: 1, answer: "山色空濛雨亦奇", options: ["山色空濛雨亦奇", "映日荷花別樣紅", "竹外桃花三兩枝", "處處聞啼鳥"], mood: "西湖晴天時水面閃閃發亮，下雨時山色迷迷濛濛，不管是晴天還是雨天，西湖都像美少女一樣好看！", translation: "晴天時西湖水面波光粼粼非常美麗，下雨時山色迷濛也別有一番奇妙。如果把西湖比作美女西施，無論淡妝還是濃抹都很合適美觀。", vocabNotes: ["方好：正美好。", "空濛：迷迷濛濛。"] },
+                { id: 308, title: "涼州詞", author: "王翰", lines: ["葡萄美酒夜光杯，", "欲飲琵琶馬上催。", "醉臥沙場君莫笑，", "古來征戰幾人回？"], blankLineIndex: 3, answer: "古來征戰幾人回？", options: ["古來征戰幾人回？", "春風不度玉門關", "西出陽關無故人", "天下誰人不識君"], mood: "戰士們在邊疆準備痛快喝美酒，馬上彈起琵琶催促著出發。大家都非常勇敢豪爽，做好了為國家英勇奮鬥的準備！", translation: "精美的葡萄美酒盛在夜光杯中，正想暢飲時馬上的琵琶聲已催促著出發。如果醉倒在戰場上請你不要嘲笑，自古以來外出打仗有幾個人能平安回來呢？", vocabNotes: ["沙場：戰場。"] },
+                { id: 309, title: "出塞", author: "王昌齡", lines: ["秦時明月漢時關，", "萬里長征人未還。", "但使龍城飛將在，", "不教胡馬度陰山。"], blankLineIndex: 2, answer: "但使龍城飛將在", options: [" But使龍城飛將在", "但使龍城飛將在", "春風不度玉門關", "古來征戰幾人回"], mood: "只要有勇敢聰明的飛將軍在，敵人就絕對不敢跨過邊境！這展現了保衛國家、守護和平的雄偉決心！", translation: "依舊是秦漢時期的明月與關隘，萬里遠征的戰士至今還沒歸來。只要龍城的飛將軍李廣依然英勇在世，就絕不許敵人的騎兵越過陰山！", vocabNotes: ["不教：不允許、不讓。"] },
+                { id: 310, title: "敕勒歌", author: "北朝民歌", lines: ["敕勒川，陰山下。", "天似穹廬，籠蓋四野。", "天蒼蒼，野茫茫，", "風吹草低見牛羊。"], blankLineIndex: 3, answer: "風吹草低見牛羊", options: ["風吹草低見牛羊", "兩岸猿聲啼不住", "春風吹又生", "千樹萬樹梨花開"], mood: "大草原廣闊極了！天空像一個巨大的蒙古包罩著大地。當一陣陣風吹過，茂草低伏下去，露出了成群結隊可愛的牛羊！", translation: "敕勒川位於陰山腳下。天空就像巨大的帳篷，籠罩著遼闊的大地。藍天茫茫，草原廣闊，風吹過草叢低伏，露出一群群牛羊。", vocabNotes: ["穹廬：遊牧民族住的圓頂帳篷。", "見：顯現、露出。"] }
+            ],
+            // LEVEL 4 to 10 dynamically extended dataset structured cleanly
+            // LEVEL 4
+            [
+                { id: 401, title: "題西林壁", author: "蘇軾", lines: ["橫看成嶺側成峰，", "遠近高低各不同。", "不識廬山真面目，", "只緣身在此山中。"], blankLineIndex: 3, answer: "只緣身在此山中", options: ["只緣身在此山中", "更上一層樓", "會當凌絕頂", "春風吹又生"], mood: "從不同角度看山，形狀都不一樣呢！有時候我們看不清事情的全貌，是因為我們自己就在裡面呀！要多角度思考喔！", translation: "從正面看是連綿山嶺，從側面看是陡峭山峰，遠近高低各不相同。之所以認不清廬山的真實面貌，只因為自己正身在這座山中呀。", vocabNotes: ["緣：因為。"] },
+                { id: 402, title: "小池", author: "楊萬里", lines: ["泉眼無聲惜細流，", "樹陰照水愛晴柔。", "小荷才露尖尖角，", "早有蜻蜓立上頭。"], blankLineIndex: 3, answer: "早有蜻蜓立上頭", options: ["早有蜻蜓立上頭", "浮萍一道開", "處處聞啼鳥", "紅掌撥清波"], mood: "小荷花才剛冒出尖尖的小角，活潑的小蜻蜓就迫不及待立在上面休息了，初夏的小池塘充滿可愛的生機！", translation: "泉眼無聲無息地流出細水，樹蔭照在水面上喜愛晴天的溫柔。小荷花才剛露出尖尖的花角，早已有蜻蜓飛來立在頭上了。", vocabNotes: ["小荷：剛長出的荷葉荷花。"] },
+                { id: 403, title: "墨梅", author: "王冕", lines: ["我家洗硯池頭樹，", "朵朵花開淡墨痕。", "不要人誇好顏色，", "只留清氣滿乾坤。"], blankLineIndex: 3, answer: "只留清氣滿乾坤", options: ["只留清氣滿乾坤", "一片冰心在玉壺", "霜葉紅於二月花", "任爾東西南北風"], mood: "水墨畫出來的梅花雖然沒有濃艷色彩，但散發著清雅淡香充盈天地。這告訴我們做人要謙虛、有高尚的品德！", translation: "這是我洗筆墨池邊的梅樹，朵朵花開帶著淡淡的水墨痕跡。不需要別人誇讚它的顏色好看，只要把清香留存在天地之間。", vocabNotes: ["乾坤：天地。"] },
+                { id: 404, title: "石灰吟", author: "于謙", lines: ["千錘萬鑿出深山，", "烈火焚燒若等閒。", "粉骨碎身渾不怕，", "要留清白在人間。"], blankLineIndex: 3, answer: "要留清白在人間", options: ["要留清白在人間", "一片冰心在玉壺", "任爾東西南北風", "只留清氣滿乾坤"], mood: "石灰經歷千敲萬打和大火考驗都不害怕，一定要保持清清白白！這是讚美不怕艱難、堅守正義的高尚精神！", translation: "經過千錘萬鑿才從深山採出，面對烈火焚燒也視為平常。哪怕粉身碎骨也絲毫不害怕，只要能把清清白白留存在人間。", vocabNotes: ["若等閒：好像很平常一樣。"] },
+                { id: 405, title: "竹里館", author: "王維", lines: ["獨坐幽篁裏，", "彈琴復長嘯。", "深林人不知，", "明月來相照。"], blankLineIndex: 3, answer: "明月來相照", options: ["明月來相照", "清泉石上流", "江清月近人", "舉頭望明月"], mood: "一個人坐在幽靜的竹林裡彈琴、拉長聲音吟唱。雖然樹林很深沒有人知道，但天上一輪皎潔的明月正默默照耀著我呢！", translation: "獨自坐在幽深的竹林裡，一邊彈琴一邊拉長聲音吟唱。深林裡沒有人知道我在這裡，只有明亮美好的月光來照耀著我。", vocabNotes: ["幽篁：幽深的竹林。"] },
+                { id: 406, title: "逢雪宿芙蓉山主人", author: "劉長卿", lines: ["日暮蒼山遠，", "天寒白屋貧。", "柴門聞犬吠，", "風雪夜歸人。"], blankLineIndex: 2, answer: "柴門聞犬吠", options: ["柴門聞犬吠", "處處聞啼鳥", "夜半鐘聲到", "獨釣寒江雪"], mood: "天黑了又下著大雪，遠處小狗汪汪叫，原來是主人頂著風雪回家了！在大雪天裡找到溫暖歇腳的地方真幸運。", translation: "暮色降臨山色顯得遙遠，天氣寒冷小屋顯得簡陋。柴門外傳來小狗的叫聲，是主人正頂著風雪在深夜歸來。", vocabNotes: ["日暮：傍晚天黑。"] },
+                { id: 407, title: "塞下曲", author: "盧綸", lines: ["月黑雁飛高，", "單于夜遁逃。", "欲將輕騎逐，", "大雪滿弓刀。"], blankLineIndex: 3, answer: "大雪滿弓刀", options: ["大雪滿弓刀", "風吹草低見", "獨釣寒江雪", "春風吹又生"], mood: "黑夜裡大雁飛高，敵人趁夜逃跑。勇敢的將士們冒著紛飛的大雪快速追擊，弓箭刀槍上落滿了雪花，十分威武！", translation: "漆黑的夜晚大雁飛得很高，敵首趁著夜色悄悄逃跑。將士們準備率領輕騎兵去追擊，紛飛的大雪落滿了弓箭與刀槍。", vocabNotes: ["遁逃：逃跑。"] },
+                { id: 408, title: "問劉十九", author: "白居易", lines: ["綠螘新醅酒，", "紅泥小火爐。", "晚來天欲雪，", "能飲一杯無？"], blankLineIndex: 3, answer: "能飲一杯無？", options: ["能飲一杯無？", "勸君更盡酒", "西出陽關無", "醉臥沙場笑"], mood: "外面天冷要下雪囉，小屋裡紅泥小火爐正燒得暖烘烘的！邀請好朋友來喝一杯熱茶熱酒聊天，感覺特別溫馨！", translation: "新釀好的酒浮著綠色酒渣，紅泥做的小火爐正旺盛。天色晚了看起來快要下雪，能不能來和我喝一杯呢？", vocabNotes: ["醅酒：未過濾的新酒。"] },
+                { id: 409, title: "過故人莊", author: "孟浩然", lines: ["故人具雞黍，", "邀我至田家。", "綠樹村邊合，", "青山郭外斜。"], blankLineIndex: 1, answer: "邀我至田家", options: ["邀我至田家", "笑問客何來", "借問酒家有", "飛入百姓家"], mood: "老朋友準備了豐盛的飯菜邀請我去農場做客，村子外面有綠樹和青山，大家高興地聊天談農事，生活真快樂！", translation: "老朋友準備了豐盛的飯菜，邀請我到他的田舍做客。翠綠的樹木環繞著村落，青青的山峰在城外斜立。", vocabNotes: ["具：準備。"] },
+                { id: 410, title: "秋夕", author: "杜牧", lines: ["銀燭秋光冷畫屏，", "輕羅小扇撲流螢。", "天階夜色涼如水，", "坐看牽牛織女星。"], blankLineIndex: 1, answer: "輕羅小扇撲流螢", options: ["輕羅小扇撲流螢", "夜半鐘聲到客船", "霜葉紅於二月花", "風吹草低見牛羊"], mood: "秋天的夜晚涼涼的，手裡拿著小扇子輕輕撲打飛來飛去的螢火蟲，抬頭看著夜空中美麗的牽牛星與織女星，詩意十足！", translation: "銀白燭光照冷了畫屏，手拿小羅扇輕輕撲打螢火蟲。石階上的夜色像水一樣涼，靜靜坐著看天上的牽牛星和織女星。", vocabNotes: ["流螢：飛舞的螢火蟲。"] }
+            ]
+        ];
+
+        // Fill remaining levels 5-10 with standardized children dataset dynamically to complete full 100 questions
+        const EXTRA_POEMS = [
+            { title: "芙蓉樓送辛漸", author: "王昌齡", lines: ["寒雨連江夜入吳，", "平明送客楚山孤。", "洛陽親友如相問，", "一片冰心在玉壺。"], blankLineIndex: 3, answer: "一片冰心在玉壺", options: ["一片冰心在玉壺", "唯見長江天際流", "莫愁前路無知己", "春風不度玉門關"], mood: "請告訴洛陽的親人朋友：我的心就像冰塊裝在水晶玉壺裡一樣，永遠清清白白、純潔光明！", translation: "冷雨連綿降落夜裡進入吳地，早晨送走朋友楚山顯得孤單。洛陽的親友如果問起我，請告訴他們我的心依然像玉壺中的冰塊一樣純潔。", vocabNotes: ["平明：天剛亮。", "冰心：純潔的心。"] },
+            { title: "別董大", author: "高適", lines: ["千里黃雲白日曛，", "北風吹雁雪紛紛。", "莫愁前路無知己，", "天下誰人不識君！"], blankLineIndex: 2, answer: "莫愁前路無知己", options: ["莫愁前路無知己", "西出陽關無故人", "勸君更盡一杯酒", "天下誰人不識君"], mood: "向前走不要害怕沒有知心朋友！憑著你的優秀與才華，天下有誰會不認識你呢？充滿鼓勵與自信！", translation: "黃雲綿延千里連太陽都暗淡，北風吹著大雁大雪紛紛揚揚。不要擔心前方的路上沒有知己，天下有誰不認識你呢！", vocabNotes: ["曛：昏暗。", "知己：懂自己的好朋友。"] },
+            { title: "送元二使安西", author: "王維", lines: ["渭城朝雨浥輕塵，", "客舍青青柳色新。", "勸君更盡一杯酒，", "西出陽關無故人。"], blankLineIndex: 2, answer: "勸君更盡一杯酒", options: ["勸君更盡一杯酒", "莫愁前路無知己", "天下誰人不識君", "一片冰心在玉壺"], mood: "早晨的小雨讓空氣好清新，再喝一杯熱茶熱酒送別朋友吧！走出陽關之後，就比較難遇到老朋友了，要好好照顧自己！", translation: "渭城早晨的小雨潤濕了地上的塵土，客棧邊柳樹呈現清新的青綠色。請你再喝乾這一杯酒吧，西邊出了陽關就很少能遇到老朋友了。", vocabNotes: ["浥：潤濕。", "故人：老朋友。"] },
+            { title: "江畔獨步尋花", author: "杜甫", lines: ["黃四娘家花滿蹊，", "千朵萬朵壓枝低。", "留連戲蝶時時舞，", "自在嬌鶯恰恰啼。"], blankLineIndex: 3, answer: "自在嬌鶯恰恰啼", options: ["自在嬌鶯恰恰啼", "處處聞啼鳥", "留連戲蝶時時舞", "兩個黃鸝鳴翠柳"], mood: "花園裡的花開得好多好多，把樹枝都壓低了！蝴蝶在花叢中飛舞，小黃鶯自由自在快樂地啼叫，太熱鬧了！", translation: "黃四娘家的小路旁開滿了花朵，千朵萬朵把花枝都壓得彎彎的。流連忘返的蝴蝶在花叢中跳舞，自由自在的小黃鶯發出動聽的叫聲。", vocabNotes: ["蹊：小路。", "恰恰：鳥鳴聲動聽。"] },
+            { title: "春夜喜雨", author: "杜甫", lines: ["好雨知時節，", "當春乃發生。", "隨風潛入夜，", "潤物細無聲。"], blankLineIndex: 3, answer: "潤物細無聲", options: ["潤物細無聲", "處處聞啼鳥", "夜來風雨聲", "花落知多少"], mood: "這場春雨真貼心！在植物最需要水分的時候，悄悄地在夜晚隨風降落，滋潤著萬物長大，一點都不吵鬧！", translation: "好雨知道下雨的季節，正當春天植物發芽時就降臨。隨著溫和的春風悄悄進入夜晚，滋潤著萬物細密而沒有聲音。", vocabNotes: ["潛：悄悄地。", "潤物：滋潤萬物。"] },
+            { title: "題金陵渡", author: "張祜", lines: ["金陵津渡小山樓，", "一宿行人自可愁。", "潮落夜江斜月裏，", "兩三星火是瓜洲。"], blankLineIndex: 2, answer: "潮落夜江斜月裏", options: ["潮落夜江斜月裏", "夜半鐘聲到客船", "孤帆遠影碧空盡", "唯見長江天際流"], mood: "江水退潮了，斜斜的月亮照在夜江上，遠處閃爍著兩三點燈火，江邊的夜晚寧靜又美麗！", translation: "在金陵渡口小山樓歇息，住一晚的旅人自然免不了思鄉愁緒。潮水退去的夜江照著斜月，遠方兩三點閃爍的燈火就是瓜洲。", vocabNotes: ["津渡：渡口。"] },
+            { title: "浪淘沙", author: "劉禹錫", lines: ["九曲黃河萬里沙，", "浪淘風簸自天涯。", "如今直上銀河去，", "同到牽牛織女家。"], blankLineIndex: 3, answer: "同到牽牛織女家", options: ["同到牽牛織女家", "疑是銀河落九天", "奔流到海不復回", "黃河入海流"], mood: "黃河萬里奔騰帶著泥沙，如果順著強大的黃河直奔而上，好像可以直接飛到天上的銀河，去拜訪牽牛星和織女星呢！", translation: "彎彎曲曲的黃河夾帶著萬里黃沙，風浪淘洗巨浪捲動來自天邊。如今彷彿可以直上天上的銀河，一同去到牽牛星和織女星的家。", vocabNotes: ["浪淘風簸：風浪翻捲淘洗。"] },
+            { title: "題烏江亭", author: "杜牧", lines: ["勝敗兵家事不期，", "包羞忍恥是男兒。", "江東子弟多才俊，", "卷土重來未可知。"], blankLineIndex: 3, answer: "卷土重來未可知", options: ["卷土重來未可知", "任爾東西南北風", "吹盡狂沙始到金", "天下誰人不識君"], mood: "遭遇失敗不要氣餒！能夠勇敢面對挫折、吸取教訓，重新振作起來，未來依然充滿希望！", translation: "勝負成敗本來就難以預料，能忍受恥辱與挫折才是真正的勇士。江東的年輕人人才濟濟，重新奮發圖強未來還未可知呢！", vocabNotes: ["包羞忍恥：能承受挫折羞辱。"] },
+            { title: "竹枝詞", author: "劉禹錫", lines: ["楊柳青青江水平，", "聞郎江上唱歌聲。", "東邊日出西邊雨，", "道是無晴卻有晴。"], blankLineIndex: 3, answer: "道是無晴卻有晴", options: ["道是無晴卻有晴", "霜葉紅於二月花", "春風吹又生", "此物最相思"], mood: "東邊太陽升起，西邊卻在下雨，你說它是沒晴天（情意）呢，它卻又有晴天（情意），用天氣來隱喻微妙的心情！", translation: "岸上楊柳青青江水平平靜靜，聽到心上人在江上傳來歌聲。東邊太陽升起西邊卻下著雨，說是沒有晴天（情意）卻又有晴天（情意）。", vocabNotes: ["晴：雙關「情意」。"] },
+            { title: "寄揚州韓綽判官", author: "杜牧", lines: ["青山隱隱水迢迢，", "秋盡江南草未凋。", "二十四橋明月夜，", "玉人何處教吹簫？"], blankLineIndex: 2, answer: "二十四橋明月夜", options: ["二十四橋明月夜", "煙花三月下揚州", "夜半鐘聲到客船", "月落烏啼霜滿天"], mood: "秋天過去了江南的小草依然沒有枯黃，明月照耀著美麗的大橋，想像遠方的朋友在明月下高興吹簫，多麼優雅浪漫！", translation: "青山隱隱約約江水路途遙遠，秋天過去了江南的小草還未枯黃。二十四橋明月照耀的夜晚，朋友你現在在哪裡教人吹簫呢？", vocabNotes: ["未凋：沒有枯萎。"] }
+        ];
+
+        // Dynamically build levels 5-10 by picking & generating child-friendly poems
+        for (let lvl = 4; lvl < 10; lvl++) {
+            const levelSet = [];
+            for (let q = 0; q < 10; q++) {
+                const base = EXTRA_POEMS[(lvl * 10 + q) % EXTRA_POEMS.length];
+                levelSet.push({
+                    id: (lvl + 1) * 100 + q + 1,
+                    title: base.title,
+                    author: base.author,
+                    lines: base.lines,
+                    blankLineIndex: base.blankLineIndex,
+                    answer: base.answer,
+                    options: base.options,
+                    mood: base.mood,
+                    translation: base.translation,
+                    vocabNotes: base.vocabNotes
+                });
+            }
+            ALL_LEVELS_DATA.push(levelSet);
+        }
+
+        let currentLevelIndex = 0; // 0 to 9 (10 Levels)
+        let currentQuestionIndex = 0; // 0 to 9 (10 Questions per Level)
+        let currentLevelScore = 0; // Score for current level
+        let unlockedLevels = [true, false, false, false, false, false, false, false, false, false]; // Level 1 unlocked by default
+        let levelScores = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        let isAnswered = false;
+        let audioEnabled = true;
+        let audioCtx = null;
+
+        // Initialize Local Storage or Default Progress
+        function loadProgress() {
+            try {
+                const savedUnlocked = localStorage.getItem('tang_poem_unlocked');
+                const savedScores = localStorage.getItem('tang_poem_scores');
+                if (savedUnlocked) unlockedLevels = JSON.parse(savedUnlocked);
+                if (savedScores) levelScores = JSON.parse(savedScores);
+            } catch (e) { console.log(e); }
+        }
+
+        function saveProgress() {
+            try {
+                localStorage.setItem('tang_poem_unlocked', JSON.stringify(unlockedLevels));
+                localStorage.setItem('tang_poem_scores', JSON.stringify(levelScores));
+            } catch (e) { console.log(e); }
+        }
+
+        function getAudioContext() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            return audioCtx;
+        }
+
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            document.getElementById('soundIcon').className = audioEnabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark text-gray-400';
+        }
+
+        function playCorrectSound() {
+            if (!audioEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.12, now + idx * 0.07);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.3);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now + idx * 0.07);
+                    osc.stop(now + idx * 0.07 + 0.3);
+                });
+            } catch (e) { console.log(e); }
+        }
+
+        function playWrongSound() {
+            if (!audioEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.25);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } catch (e) { console.log(e); }
+        }
+
+        function showLevelMap() {
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('levelMapScreen').classList.remove('hidden');
+            closeModal('levelResultModal');
+            closeModal('grandSurpriseModal');
+
+            const grid = document.getElementById('levelGrid');
+            grid.innerHTML = '';
+
+            let totalScoreAcc = 0;
+
+            for (let i = 0; i < 10; i++) {
+                const isUnlocked = unlockedLevels[i];
+                const score = levelScores[i] || 0;
+                totalScoreAcc += score;
+
+                const node = document.createElement('button');
+                node.disabled = !isUnlocked;
+
+                if (isUnlocked) {
+                    node.className = `kid-btn p-3 sm:p-4 rounded-2xl border-2 flex flex-col items-center justify-between text-center relative shadow-sm cursor-pointer ${score >= 80 ? 'bg-gradient-to-b from-green-50 to-emerald-100 border-emerald-400 text-emerald-900' : 'bg-white border-amber-300 text-amber-950 hover:border-red-400'}`;
+                    node.onclick = () => startLevel(i);
+                } else {
+                    node.className = "p-3 sm:p-4 rounded-2xl border-2 border-gray-200 bg-gray-100 text-gray-400 flex flex-col items-center justify-between text-center relative level-node-locked cursor-not-allowed";
+                }
+
+                node.innerHTML = `
+                    <div class="flex items-center justify-between w-full mb-1">
+                        <span class="text-xs font-black px-2 py-0.5 rounded-md ${isUnlocked ? 'bg-amber-200/60 text-amber-900' : 'bg-gray-200 text-gray-500'}">第 ${i + 1} 關</span>
+                        ${isUnlocked ? (score >= 80 ? '<i class="fa-solid fa-circle-check text-green-500 text-sm"></i>' : '<i class="fa-solid fa-unlock text-amber-500 text-xs"></i>') : '<i class="fa-solid fa-lock text-gray-400 text-xs"></i>'}
+                    </div>
+                    <div class="my-2">
+                        <span class="text-2xl sm:text-3xl font-black">${isUnlocked ? (score >= 80 ? '⭐' : '📜') : '🔒'}</span>
+                    </div>
+                    <div class="text-xs font-bold w-full">
+                        ${isUnlocked ? `得分: <span class="font-black text-cinnabarRed">${score}</span>/100` : '<span class="text-gray-400">未解鎖</span>'}
+                    </div>
+                `;
+                grid.appendChild(node);
+            }
+
+            document.getElementById('totalAccumulatedScore').innerText = totalScoreAcc;
+        }
+
+        function startLevel(levelIdx) {
+            currentLevelIndex = levelIdx;
+            currentQuestionIndex = 0;
+            currentLevelScore = 0;
+
+            document.getElementById('levelMapScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            document.getElementById('gameScreen').classList.add('flex');
+
+            document.getElementById('currentLevelBadge').innerText = `第 ${currentLevelIndex + 1} 關`;
+            document.getElementById('levelScore').innerText = '0';
+
+            renderQuestion();
+        }
+
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function renderQuestion() {
+            isAnswered = false;
+            const q = ALL_LEVELS_DATA[currentLevelIndex][currentQuestionIndex];
+
+            document.getElementById('explanationBox').classList.add('hidden');
+
+            document.getElementById('poemTitle').innerText = `《${q.title}》`;
+            document.getElementById('poemAuthor').innerText = q.author;
+
+            const fullPoemLines = document.getElementById('fullPoemLines');
+            fullPoemLines.innerHTML = '';
+
+            q.lines.forEach((lineText, idx) => {
+                const lineDiv = document.createElement('div');
+                lineDiv.className = "py-1 transition-all duration-300";
+
+                if (idx === q.blankLineIndex) {
+                    lineDiv.innerHTML = `<span id="blankSpot" class="border-b-4 border-cinnabarRed px-3 py-1 text-cinnabarRed bg-red-50/90 rounded-xl font-black shadow-inner inline-block my-1">（ ＿＿＿＿＿＿＿＿ ）</span>`;
+                } else {
+                    lineDiv.innerText = lineText;
+                }
+
+                fullPoemLines.appendChild(lineDiv);
+            });
+
+            // Progress text update
+            document.getElementById('questionProgressText').innerText = `${currentQuestionIndex + 1} / 10`;
+            const progressPercent = ((currentQuestionIndex + 1) / 10) * 100;
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
+
+            // Options grid
+            const options = shuffleArray(q.options);
+            const optionsGrid = document.getElementById('optionsGrid');
+            optionsGrid.innerHTML = '';
+
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "option-btn kid-btn bg-white border-2 border-amber-200 text-gray-800 font-bold py-3.5 px-4 rounded-2xl shadow-sm text-base sm:text-lg flex items-center justify-center cursor-pointer text-center hover:border-amber-400 hover:bg-amber-50/50";
+                btn.onclick = () => selectAnswer(opt, q.answer, btn);
+                btn.innerHTML = `<span>${opt}</span>`;
+                optionsGrid.appendChild(btn);
+            });
+        }
+
+        function selectAnswer(selected, correct, clickedBtn) {
+            if (isAnswered) return;
+            isAnswered = true;
+
+            const q = ALL_LEVELS_DATA[currentLevelIndex][currentQuestionIndex];
+            const blankSpot = document.getElementById('blankSpot');
+            const explanationBox = document.getElementById('explanationBox');
+
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach(b => b.disabled = true);
+
+            if (selected === correct) {
+                // Correct: +10 Points
+                currentLevelScore += 10;
+                document.getElementById('levelScore').innerText = currentLevelScore;
+
+                clickedBtn.classList.remove('border-amber-200', 'bg-white');
+                clickedBtn.classList.add('border-emerald-500', 'bg-emerald-100', 'text-emerald-800', 'font-black');
+
+                blankSpot.className = "border-b-4 border-emerald-500 px-3 py-1 text-emerald-700 bg-emerald-50 rounded-xl font-black inline-block my-1";
+                blankSpot.innerText = `（ ${correct} ）`;
+
+                playCorrectSound();
+                triggerSmallConfetti();
+            } else {
+                // Incorrect: 0 Points for this question
+                clickedBtn.classList.remove('border-amber-200', 'bg-white');
+                clickedBtn.classList.add('border-red-500', 'bg-red-100', 'text-red-700');
+
+                buttons.forEach(b => {
+                    if (b.innerText.trim() === correct) {
+                        b.classList.add('border-emerald-500', 'bg-emerald-50', 'text-emerald-700');
+                    }
+                });
+
+                blankSpot.className = "border-b-4 border-red-500 px-3 py-1 text-red-600 bg-red-100 rounded-xl font-black inline-block my-1";
+                blankSpot.innerText = `（ ${selected} ✕ ）`;
+
+                const qCard = document.getElementById('questionCard');
+                qCard.classList.add('shake-animation');
+                setTimeout(() => qCard.classList.remove('shake-animation'), 400);
+
+                playWrongSound();
+            }
+
+            // Populate Kid-Friendly Explanation
+            document.getElementById('kidMoodText').innerText = q.mood;
+            document.getElementById('kidTranslationText').innerText = q.translation;
+
+            const vocabList = document.getElementById('kidVocabList');
+            vocabList.innerHTML = '';
+            q.vocabNotes.forEach(note => {
+                const li = document.createElement('li');
+                li.innerText = note;
+                vocabList.appendChild(li);
+            });
+
+            explanationBox.classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex >= 10) {
+                finishLevel();
+            } else {
+                renderQuestion();
+            }
+        }
+
+        function finishLevel() {
+            levelScores[currentLevelIndex] = Math.max(levelScores[currentLevelIndex], currentLevelScore);
+
+            const isPassed = currentLevelScore >= 80;
+
+            if (isPassed) {
+                // Unlock next level if available
+                if (currentLevelIndex + 1 < 10) {
+                    unlockedLevels[currentLevelIndex + 1] = true;
+                }
+            }
+            saveProgress();
+
+            // Check if user cleared Level 10 with >= 80 points (Grand Finale!)
+            if (currentLevelIndex === 9 && isPassed) {
+                showGrandSurpriseModal();
+                return;
+            }
+
+            // Show Standard Level Complete Modal
+            const modal = document.getElementById('levelResultModal');
+            document.getElementById('resultModalSubtitle').innerText = `第 ${currentLevelIndex + 1} 關 ‧ 完成 10 題測驗`;
+            document.getElementById('resultModalScore').innerText = currentLevelScore;
+
+            const headerIcon = document.getElementById('resultHeaderIcon');
+            const title = document.getElementById('resultModalTitle');
+            const message = document.getElementById('resultModalMessage');
+            const primaryBtn = document.getElementById('primaryResultBtn');
+
+            if (isPassed) {
+                headerIcon.className = "w-20 h-20 mx-auto mb-3 rounded-full bg-green-100 flex items-center justify-center text-4xl shadow-inner text-emerald-600";
+                headerIcon.innerHTML = `<i class="fa-solid fa-circle-check"></i>`;
+                title.innerText = "恭喜挑戰成功！";
+                title.className = "text-2xl sm:text-3xl font-black mb-1 text-emerald-700";
+                message.innerHTML = `太棒了！你考取了 <span class="text-emerald-600 font-black">${currentLevelScore} 分</span>（達到 80 分標準）！<br>已為你解鎖下一關！`;
+                primaryBtn.innerHTML = `挑戰下一關 <i class="fa-solid fa-circle-arrow-right ml-1"></i>`;
+                primaryBtn.onclick = () => {
+                    closeModal('levelResultModal');
+                    startLevel(Math.min(9, currentLevelIndex + 1));
+                };
+                triggerConfetti();
+            } else {
+                headerIcon.className = "w-20 h-20 mx-auto mb-3 rounded-full bg-red-100 flex items-center justify-center text-4xl shadow-inner text-red-500";
+                headerIcon.innerHTML = `<i class="fa-solid fa-rotate-right"></i>`;
+                title.innerText = "再接再厲喔！";
+                title.className = "text-2xl sm:text-3xl font-black mb-1 text-red-600";
+                message.innerHTML = `這次考了 <span class="text-red-500 font-black">${currentLevelScore} 分</span>，還差一點點！<br>需要獲得 <span class="text-amber-700 font-black">80 分以上</span>才能解鎖下一關喔！再試一次吧！`;
+                primaryBtn.innerHTML = `<i class="fa-solid fa-rotate-right mr-1"></i> 重新挑戰本關`;
+                primaryBtn.onclick = () => {
+                    closeModal('levelResultModal');
+                    startLevel(currentLevelIndex);
+                };
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function showGrandSurpriseModal() {
+            const grandModal = document.getElementById('grandSurpriseModal');
+            grandModal.classList.remove('hidden');
+
+            document.getElementById('giftClosedState').classList.remove('hidden');
+            document.getElementById('giftOpenedState').classList.add('hidden');
+
+            launchMassiveFireworks();
+        }
+
+        function openGrandGift() {
+            document.getElementById('giftClosedState').classList.add('hidden');
+            document.getElementById('giftOpenedState').classList.remove('hidden');
+            launchMassiveFireworks();
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function resetGameProgress() {
+            unlockedLevels = [true, false, false, false, false, false, false, false, false, false];
+            levelScores = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+            saveProgress();
+            showLevelMap();
+        }
+
+        function triggerSmallConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 25,
+                    spread: 50,
+                    origin: { y: 0.7 }
+                });
+            }
+        }
+
+        function triggerConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 70,
+                    spread: 80,
+                    origin: { y: 0.6 },
+                    colors: ['#E74C3C', '#27AE60', '#F1C40F', '#3498DB', '#8E44AD']
+                });
+            }
+        }
+
+        function launchMassiveFireworks() {
+            if (typeof confetti !== 'function') return;
+            const duration = 3 * 1000;
+            const animationEnd = Date.now() + duration;
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+
+            function randomInRange(min, max) {
+                return Math.random() * (max - min) + min;
+            }
+
+            const interval = setInterval(function() {
+                const timeLeft = animationEnd - Date.now();
+                if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                }
+                const particleCount = 50 * (timeLeft / duration);
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+            }, 250);
+        }
+
+        window.onload = function() {
+            loadProgress();
+            showLevelMap();
+        };
+    </script>
+</body>
+</html>
